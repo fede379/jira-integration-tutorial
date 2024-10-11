@@ -39,6 +39,7 @@ JiraApiHttpClient.interceptors.response.use(
 
 interface JiraApiHook {
   getJiraResources: () => Promise<JiraResource[]>;
+  deleteJiraIssue: (issueIdOrKey: string) => Promise<void>;
   fetcher: <T>(args: {
     url: string;
     params?: Record<string, unknown>;
@@ -52,6 +53,10 @@ export function useJiraApi(): JiraApiHook {
     );
   }
 
+  async function deleteJiraIssue(issueIdOrKey: string): Promise<void> {
+    return JiraApiHttpClient.delete<void, void>(`issue/${issueIdOrKey}`);
+  }
+
   const fetcher = useCallback(function <T>(args: {
     url: string;
     params?: Record<string, unknown>;
@@ -60,5 +65,5 @@ export function useJiraApi(): JiraApiHook {
   },
   []);
 
-  return { getJiraResources, fetcher } as const;
+  return { getJiraResources, deleteJiraIssue, fetcher } as const;
 }

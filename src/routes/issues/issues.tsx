@@ -1,4 +1,13 @@
-import { Avatar, Flex, Select, Table, TableProps, Typography } from "antd";
+import {
+  Avatar,
+  Button,
+  Flex,
+  Popconfirm,
+  Select,
+  Table,
+  TableProps,
+  Typography,
+} from "antd";
 import { useJiraApi } from "../../hooks/useJiraApi";
 import { useState } from "react";
 import {
@@ -26,13 +35,13 @@ export function IssuesPage() {
   const [selectedIssueType, setSelectedIssueType] = useState<IssueType>(
     IssueType.Story
   );
-  const { fetcher } = useJiraApi();
+  const { fetcher, deleteJiraIssue } = useJiraApi();
 
   const { data: jiraProjects } = useSWR(
     { url: "/project" },
     fetcher<JiraProject[]>
   );
-  const { data: jiraIssues } = useSWR(
+  const { data: jiraIssues, mutate: mutateJiraIssues } = useSWR(
     {
       url: "search",
       params: {
@@ -52,6 +61,26 @@ export function IssuesPage() {
 
   function onChangeIssueType(value: IssueType) {
     setSelectedIssueType(value);
+  }
+
+  function onDeleteIssue(id: string) {
+    return async () => {
+      try {
+        if (jiraIssues) {
+          await deleteJiraIssue(id);
+          mutateJiraIssues(jiraIssues, {
+            optimisticData: {
+              ...jiraIssues,
+              issues:
+                jiraIssues.issues?.filter((issue) => issue.id === id) || [],
+            },
+            rollbackOnError: true,
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
   }
 
   const columns: TableProps<JiraIssue>["columns"] = [
@@ -87,6 +116,26 @@ export function IssuesPage() {
           <Flex align="center" gap={8}>
             <Avatar size="small" src={row.fields.priority.iconUrl} />
             <Typography.Text>{row.fields.priority.name}</Typography.Text>
+          </Flex>
+        );
+      },
+    },
+    {
+      title: "Actions",
+      dataIndex: ["id"],
+      key: "id",
+      render: (id) => {
+        return (
+          <Flex align="center" gap={8}>
+            <Popconfirm
+              title="Delete the issue"
+              description="Are you sure to delete this issue?"
+              onConfirm={onDeleteIssue(id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button size="small">Delete</Button>
+            </Popconfirm>
           </Flex>
         );
       },
