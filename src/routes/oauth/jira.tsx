@@ -6,7 +6,8 @@ import {
   saveJiraTokenIntoLocalStorage,
 } from "../../utils/storage";
 import { useState } from "react";
-import { JiraResource, useJiraApi } from "../../hooks/useJiraApi";
+import { useJiraApi } from "../../hooks/useJiraApi";
+import { JiraResource } from "../../interfaces/jira.responses";
 
 const cardStyle: React.CSSProperties = {
   maxHeight: 269,

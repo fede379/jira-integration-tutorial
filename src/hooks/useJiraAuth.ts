@@ -4,6 +4,7 @@ import {
   ATLASSIAN_CLIENT_ID,
   ATLASSIAN_SECRET,
 } from "../config";
+import { JiraAuthResponse } from "../interfaces/jira.responses";
 
 const JiraAuthHttpClient = axios.create({
   baseURL: ATLASSIAN_AUTH_URL,
@@ -28,22 +29,13 @@ JiraAuthHttpClient.interceptors.response.use(
   }
 );
 
-interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
-  scope: string;
-  error?: unknown;
-}
-
 interface JiraAuthHook {
-  getJiraAccessToken: (code: string) => Promise<AuthResponse>;
+  getJiraAccessToken: (code: string) => Promise<JiraAuthResponse>;
 }
 
 export function useJiraAuth(): JiraAuthHook {
-  async function getJiraAccessToken(code: string): Promise<AuthResponse> {
-    return JiraAuthHttpClient.post<void, AuthResponse>("oauth/token", {
+  async function getJiraAccessToken(code: string): Promise<JiraAuthResponse> {
+    return JiraAuthHttpClient.post<void, JiraAuthResponse>("oauth/token", {
       grant_type: "authorization_code",
       client_id: ATLASSIAN_CLIENT_ID,
       client_secret: ATLASSIAN_SECRET,
