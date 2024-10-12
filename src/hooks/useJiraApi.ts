@@ -5,7 +5,7 @@ import {
   getJiraTokenFromLocalStorage,
 } from "../utils/storage";
 import { useCallback } from "react";
-import { JiraResource } from "../interfaces/jira.responses";
+import { JiraIssue, JiraResource } from "../interfaces/jira.responses";
 
 const ACCESSIBLE_RESOURCES_URL = "oauth/token/accessible-resources";
 
@@ -40,6 +40,10 @@ JiraApiHttpClient.interceptors.response.use(
 interface JiraApiHook {
   getJiraResources: () => Promise<JiraResource[]>;
   deleteJiraIssue: (issueIdOrKey: string) => Promise<void>;
+  updateJiraIssueSummary: (
+    issueIdOrKey: string,
+    newSummary: string
+  ) => Promise<JiraIssue>;
   fetcher: <T>(args: {
     url: string;
     params?: Record<string, unknown>;
@@ -57,6 +61,19 @@ export function useJiraApi(): JiraApiHook {
     return JiraApiHttpClient.delete<void, void>(`issue/${issueIdOrKey}`);
   }
 
+  async function updateJiraIssueSummary(
+    issueIdOrKey: string,
+    newSummary: string
+  ): Promise<JiraIssue> {
+    return JiraApiHttpClient.put<void, JiraIssue>(
+      `issue/${issueIdOrKey}`,
+      {
+        fields: { summary: newSummary },
+      },
+      { params: { returnIssue: true } }
+    );
+  }
+
   const fetcher = useCallback(function <T>(args: {
     url: string;
     params?: Record<string, unknown>;
@@ -65,5 +82,10 @@ export function useJiraApi(): JiraApiHook {
   },
   []);
 
-  return { getJiraResources, deleteJiraIssue, fetcher } as const;
+  return {
+    getJiraResources,
+    deleteJiraIssue,
+    updateJiraIssueSummary,
+    fetcher,
+  } as const;
 }

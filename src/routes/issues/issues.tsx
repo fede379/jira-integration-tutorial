@@ -1,3 +1,4 @@
+import "./issues.css";
 import {
   Avatar,
   Button,
@@ -16,6 +17,7 @@ import {
   PaginatedResponse,
 } from "../../interfaces/jira.responses";
 import useSWR from "swr";
+import { EditableCell, EditableRow } from "./components";
 
 enum IssueType {
   Epic,
@@ -35,7 +37,7 @@ export function IssuesPage() {
   const [selectedIssueType, setSelectedIssueType] = useState<IssueType>(
     IssueType.Story
   );
-  const { fetcher, deleteJiraIssue } = useJiraApi();
+  const { fetcher, deleteJiraIssue, updateJiraIssueSummary } = useJiraApi();
 
   const { data: jiraProjects } = useSWR(
     { url: "/project" },
@@ -65,22 +67,60 @@ export function IssuesPage() {
 
   function onDeleteIssue(id: string) {
     return async () => {
-      try {
-        if (jiraIssues) {
-          await deleteJiraIssue(id);
-          mutateJiraIssues(jiraIssues, {
-            optimisticData: {
-              ...jiraIssues,
-              issues:
-                jiraIssues.issues?.filter((issue) => issue.id === id) || [],
-            },
-            rollbackOnError: true,
-          });
-        }
-      } catch (error) {
-        console.log(error);
+      if (jiraIssues) {
+        const filteredIssues = {
+          ...jiraIssues,
+          issues: jiraIssues.issues?.filter((issue) => issue.id !== id) || [],
+        };
+        const deleteIssue = async () => {
+          try {
+            await deleteJiraIssue(id);
+            return filteredIssues;
+          } catch (error) {
+            console.log(error);
+          }
+        };
+        mutateJiraIssues(deleteIssue(), {
+          optimisticData: filteredIssues,
+          rollbackOnError: true,
+        });
       }
     };
+  }
+
+  function onUpdateIssueSummary(record: JiraIssue) {
+    try {
+      if (jiraIssues) {
+        const index = jiraIssues.issues?.findIndex(
+          (item) => item.id === record.id
+        );
+        const item = jiraIssues.issues[index];
+        const issues = jiraIssues.issues.map((issue) =>
+          issue.id === record.id ? { ...item, ...record } : issue
+        );
+        const updatedJiraIssues = { ...jiraIssues, issues };
+
+        const updateJiraIssue = async () => {
+          try {
+            await updateJiraIssueSummary(record.id, record.fields.summary);
+            return updatedJiraIssues;
+          } catch (error) {
+            console.log(error);
+          }
+        };
+
+        mutateJiraIssues(updateJiraIssue(), {
+          optimisticData: updatedJiraIssues,
+          rollbackOnError: true,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  function handleSave(record: JiraIssue) {
+    onUpdateIssueSummary(record);
   }
 
   const columns: TableProps<JiraIssue>["columns"] = [
@@ -101,6 +141,13 @@ export function IssuesPage() {
       title: "Summary",
       dataIndex: ["fields", "summary"],
       key: "summary",
+      onCell: (record: JiraIssue) => ({
+        record,
+        editable: true,
+        dataIndex: ["fields", "summary"],
+        title: "Summary",
+        handleSave,
+      }),
     },
     {
       title: "Status",
@@ -122,19 +169,21 @@ export function IssuesPage() {
     },
     {
       title: "Actions",
-      dataIndex: ["id"],
-      key: "id",
-      render: (id) => {
+      dataIndex: "actions",
+      key: "actions",
+      render: (_, row) => {
         return (
           <Flex align="center" gap={8}>
             <Popconfirm
               title="Delete the issue"
               description="Are you sure to delete this issue?"
-              onConfirm={onDeleteIssue(id)}
+              onConfirm={onDeleteIssue(row.id)}
               okText="Yes"
               cancelText="No"
             >
-              <Button size="small">Delete</Button>
+              <Button danger size="small">
+                Delete
+              </Button>
             </Popconfirm>
           </Flex>
         );
@@ -162,7 +211,18 @@ export function IssuesPage() {
           onChange={onChangeIssueType}
         />
       </Flex>
-      <Table dataSource={jiraIssues?.issues} columns={columns} />
+      <Table<JiraIssue>
+        dataSource={jiraIssues?.issues}
+        columns={columns}
+        bordered
+        rowClassName={() => "editable-row"}
+        components={{
+          body: {
+            row: EditableRow,
+            cell: EditableCell,
+          },
+        }}
+      />
     </Flex>
   );
 }
