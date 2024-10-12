@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { HomeOutlined, LogoutOutlined, TeamOutlined } from "@ant-design/icons";
+import { HomeOutlined, LogoutOutlined } from "@ant-design/icons";
 import { Flex, Layout, Menu, MenuProps, theme, Typography } from "antd";
 import { Link, Outlet, ScrollRestoration, useNavigate } from "react-router-dom";
+import { clearLocalStorage } from "../../utils/storage";
 import capitalize from "lodash/capitalize";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -12,11 +13,6 @@ const items = [
     key: "issues",
     icon: React.createElement(HomeOutlined),
     label: "Issues",
-  },
-  {
-    key: "workspaces",
-    icon: React.createElement(TeamOutlined),
-    label: "Workspaces",
   },
   {
     key: "logout",
@@ -48,9 +44,11 @@ export function RootPage() {
   const onClick: MenuProps["onClick"] = (e) => {
     const navKey = e.key as NavKey;
     setCurrentNavKey(navKey);
-    if (navKey !== "logout") {
-      navigate(e.key);
+    if (navKey === "logout") {
+      clearLocalStorage();
+      return navigate("login", { replace: true });
     }
+    return navigate(e.key);
   };
 
   return (

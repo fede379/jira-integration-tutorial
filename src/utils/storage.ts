@@ -16,3 +16,7 @@ export function saveCloudIdIntoLocalStorage(accessToken: string) {
 export function getCloudIdFromLocalStorage() {
   return window.localStorage.getItem(JIRA_CLOUD_ID);
 }
+
+export function clearLocalStorage() {
+  return window.localStorage.clear();
+}
