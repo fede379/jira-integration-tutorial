@@ -27,13 +27,13 @@ const rootStyle: React.CSSProperties = {
 };
 
 enum Step {
-  authorization,
-  get_resources,
-  resource_selection,
+  Authorization,
+  GetResources,
+  ResourceSelection,
 }
 
 export function JiraOauthPage() {
-  const [step, setStep] = useState<Step>(Step.authorization);
+  const [step, setStep] = useState<Step>(Step.Authorization);
   const [resources, setResources] = useState<JiraResource[]>([]);
   const [selectedResource, setSelectedResource] = useState<JiraResource>();
   const [params] = useSearchParams();
@@ -47,7 +47,7 @@ export function JiraOauthPage() {
       try {
         const authResponse = await getJiraAccessToken(code);
         saveJiraTokenIntoLocalStorage(authResponse.access_token);
-        setStep(Step.get_resources);
+        setStep(Step.GetResources);
       } catch (error) {
         console.error(error);
       }
@@ -56,7 +56,7 @@ export function JiraOauthPage() {
 
   async function onRequestAvailableResources() {
     try {
-      setStep(Step.resource_selection);
+      setStep(Step.ResourceSelection);
       const jiraResources = await getJiraResources();
       setResources(jiraResources);
     } catch (error) {
@@ -100,7 +100,7 @@ export function JiraOauthPage() {
                   Token
                 </Typography.Title>
                 <Button
-                  disabled={step > Step.authorization}
+                  disabled={step > Step.Authorization}
                   type="primary"
                   onClick={onRequestAccessToken}
                 >
@@ -109,7 +109,7 @@ export function JiraOauthPage() {
               </Flex>
             </Flex>
           </Card>
-          {step > Step.authorization && (
+          {step > Step.Authorization && (
             <Card
               hoverable
               style={cardStyle}
@@ -128,7 +128,7 @@ export function JiraOauthPage() {
                     seleccion del usuario
                   </Typography.Title>
                   <Button
-                    disabled={step > Step.get_resources}
+                    disabled={step > Step.GetResources}
                     type="primary"
                     onClick={onRequestAvailableResources}
                   >
@@ -138,7 +138,7 @@ export function JiraOauthPage() {
               </Flex>
             </Card>
           )}
-          {step > Step.get_resources && (
+          {step > Step.GetResources && (
             <Card
               hoverable
               style={cardStyle}
